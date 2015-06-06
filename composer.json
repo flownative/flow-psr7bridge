@@ -1,0 +1,26 @@
+{
+    "name": "flownative/psr7bridge",
+    "type": "typo3-flow-package",
+    "description": "Bridge between PSR-7 and Flow HTTP implementation",
+    "require": {
+        "php": ">=5.4",
+        "typo3/flow": "2.1 - 3.0",
+        "psr/http-message": "^1.0"
+    },
+    "keywords": ["psr-7", "flow"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Christian Mueller",
+            "email": "christian@flownative.com"
+        }
+    ],
+    "require-dev": {
+        "zendframework/zend-diactoros": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Flownative\\Psr7Bridge\\": "Classes"
+        }
+    }
+}
