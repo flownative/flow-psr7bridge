@@ -50,8 +50,7 @@ class RequestTransformer implements RequestTransformerInterface {
 	 * @return Psr\RequestInterface
 	 */
 	public function transformFlowToPsrRequest(FlowHttp\Request $flowRequest) {
-		/** @var Psr\RequestInterface $psrRequest */
-		$psrRequest = new $this->psrRequestImplementationClassName;
+		$psrRequest = $this->createPsrRequestInstance();
 
 		$psrUri = $this->uriTransformer->transformFlowToPsrUri($flowRequest->getUri());
 		$psrRequest = $psrRequest->withUri($psrUri);
@@ -102,7 +101,22 @@ class RequestTransformer implements RequestTransformerInterface {
 			fwrite($resource, $request->getContent());
 		}
 
-		$streamInstance = $this->streamConstructorClosure->__invoke($resource);
+		$streamInstance = $this->createStreamFromResource($resource);
 		return $streamInstance;
+	}
+
+	/**
+	 * @param resource $resource
+	 * @return Psr\StreamInterface
+	 */
+	protected function createStreamFromResource($resource) {
+		return $this->streamConstructorClosure->__invoke($resource);
+	}
+
+	/**
+	 * @return Psr\RequestInterface
+	 */
+	protected function createPsrRequestInstance() {
+		return new $this->psrRequestImplementationClassName;
 	}
 }
