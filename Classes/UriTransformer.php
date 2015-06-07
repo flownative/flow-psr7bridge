@@ -7,18 +7,29 @@ use \Psr\Http\Message as Psr;
 /**
  * Transformer to convert \TYPO3\Flow\Http\Uri instances to \Psr\Http\Message\UriInterface implementation instances and vice versa.
  */
-class UriTransformer {
+class UriTransformer implements UriTransformerInterface {
 
 	/**
-	 * Takes a Flow Uri instance and converts it to an instance of the \Psr\Http\Message\UriInterface implementation class given.
+	 * @var string
+	 */
+	protected $psrUriImplementationClassName;
+
+	/**
+	 * @param string $psrUriImplementationClassName The PSR-7 Uri implementation to use for this transformer
+	 */
+	public function __construct($psrUriImplementationClassName) {
+		$this->psrUriImplementationClassName = $psrUriImplementationClassName;
+	}
+
+	/**
+	 * Takes a Flow Uri instance and converts it to an instance of the \Psr\Http\Message\UriInterface implementation class.
 	 *
 	 * @param Flow\Uri $flowUri
-	 * @param string $psrImplementationClassName
 	 * @return Psr\UriInterface
 	 */
-	public function transformFlowToPsrUri(Flow\Uri $flowUri, $psrImplementationClassName) {
+	public function transformFlowToPsrUri(Flow\Uri $flowUri) {
 		/** @var $psrUri Psr\UriInterface */
-		$psrUri = new $psrImplementationClassName;
+		$psrUri = new $this->psrUriImplementationClassName;
 
 		$psrUri = $psrUri->withScheme($flowUri->getScheme());
 

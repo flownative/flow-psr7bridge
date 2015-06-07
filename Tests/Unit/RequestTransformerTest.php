@@ -1,9 +1,10 @@
 <?php
 namespace Flownative\Psr7Bridge\Tests\Unit;
 
-
+use Flownative\Psr7Bridge\RequestTransformerInterface;
 use Flownative\Psr7Bridge\UriTransformer;
 use Flownative\Psr7Bridge\RequestTransformer;
+use Flownative\Psr7Bridge\UriTransformerInterface;
 use TYPO3\Flow\Http as FlowHttp;
 use TYPO3\Flow\Tests\UnitTestCase;
 use Zend\Diactoros as PsrImplementation;
@@ -16,7 +17,7 @@ use org\bovigo\vfs\vfsStream;
 class RequestTransformerTest extends UnitTestCase {
 
 	/**
-	 * @var UriTransformer
+	 * @var UriTransformerInterface
 	 */
 	protected $uriTransformerMock;
 
@@ -26,7 +27,7 @@ class RequestTransformerTest extends UnitTestCase {
 	protected $testingUri = 'http://localhost/index.html?foo=bar';
 
 	/**
-	 * @var RequestTransformer
+	 * @var RequestTransformerInterface
 	 */
 	protected $requestTransformer;
 
@@ -38,7 +39,9 @@ class RequestTransformerTest extends UnitTestCase {
 		$this->uriTransformerMock = $this->getMock(UriTransformer::class, [], [], '', FALSE);
 		$this->uriTransformerMock->expects($this->any())->method('transformPsrToFlowUri')->willReturn(new FlowHttp\Uri($this->testingUri));
 		$this->uriTransformerMock->expects($this->any())->method('transformFlowToPsrUri')->willReturn(new PsrImplementation\Uri($this->testingUri));
-		$this->requestTransformer = new RequestTransformer($this->uriTransformerMock);
+		$this->requestTransformer = new RequestTransformer($this->uriTransformerMock, PsrImplementation\Request::class, function ($resource) {
+			return new PsrImplementation\Stream($resource);
+		});
 	}
 
 	/**
@@ -79,7 +82,7 @@ class RequestTransformerTest extends UnitTestCase {
 		$flowRequest->setHeader('X-Test', 'single value');
 		$flowRequest->setHeader('X-Another-Test', ['value1', 'value2']);
 
-		$psrRequest = $this->requestTransformer->transformFlowToPsrRequest($flowRequest, PsrImplementation\Request::class, PsrImplementation\Uri::class, function($resource) {return new PsrImplementation\Stream($resource);});
+		$psrRequest = $this->requestTransformer->transformFlowToPsrRequest($flowRequest);
 
 		$this->assertEquals($this->testingUri, $psrRequest->getUri()->__toString());
 		$this->assertEquals($requestContentString, $psrRequest->getBody()->__toString());
@@ -101,9 +104,7 @@ class RequestTransformerTest extends UnitTestCase {
 		$flowRequest = $this->getMock(FlowHttp\Request::class, NULL, [], '', FALSE);
 		$flowRequest->setContent($requestContentString);
 
-		$psrStream = $this->requestTransformer->createPsrStreamFromFlowRequest($flowRequest, function($resource) {
-			return new PsrImplementation\Stream($resource);
-		});
+		$psrStream = $this->requestTransformer->createPsrStreamFromFlowRequest($flowRequest);
 
 		$this->assertInstanceOf(Psr\StreamInterface::class, $psrStream);
 		$this->assertEquals($requestContentString, $psrStream->__toString());
@@ -121,9 +122,7 @@ class RequestTransformerTest extends UnitTestCase {
 		// Due to https://jira.typo3.org/browse/FLOW-304 the inputStreamUri needs to be set like this for testing.
 		$this->inject($flowRequest, 'inputStreamUri', 'vfs://Test/requestContent.txt');
 
-		$psrStream = $this->requestTransformer->createPsrStreamFromFlowRequest($flowRequest, function($resource) {
-			return new PsrImplementation\Stream($resource);
-		});
+		$psrStream = $this->requestTransformer->createPsrStreamFromFlowRequest($flowRequest);
 
 		$this->assertInstanceOf(Psr\StreamInterface::class, $psrStream);
 		$this->assertEquals($requestContentString, $psrStream->getContents());

@@ -21,7 +21,7 @@ class UriTransformerTest extends UnitTestCase {
 	 *
 	 */
 	public function setUp() {
-		$this->uriTransformer = new UriTransformer();
+		$this->uriTransformer = new UriTransformer(PsrImplementation\Uri::class);
 	}
 
 	/**
@@ -62,7 +62,7 @@ class UriTransformerTest extends UnitTestCase {
 	 */
 	public function convertFlowToPsrResultsInSameUri($originalUriString) {
 		$flowUri = new FlowHttp\Uri($originalUriString);
-		$psrUri = $this->uriTransformer->transformFlowToPsrUri($flowUri, PsrImplementation\Uri::class);
+		$psrUri = $this->uriTransformer->transformFlowToPsrUri($flowUri);
 
 		$this->assertEquals($originalUriString, $psrUri->__toString());
 	}
