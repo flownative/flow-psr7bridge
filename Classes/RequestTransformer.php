@@ -8,29 +8,7 @@ use Psr\Http\Message as Psr;
  * Transformer to convert \TYPO3\Flow\Http\Request instances to \Psr\Http\Message\RequestInterface implementation instances and vice versa.
  * Additionally can extract a \Psr\Http\Message\StreamInterface instance from the Flow Request content.
  */
-class RequestTransformer implements RequestTransformerInterface {
-
-	/**
-	 * The UriTransformer instance to use
-	 *
-	 * @var UriTransformerInterface
-	 */
-	protected $uriTransformer;
-
-	/**
-	 * The PSR-7 RequestInterface implementation class to convert to.
-	 *
-	 * @var string
-	 */
-	protected $psrRequestImplementationClassName;
-
-	/**
-	 * A function that accepts one argument which will be a PHP resource stream and returns a PSR-7 StreamInterface instance wrapping the given resource.
-	 *
-	 * @var \Closure
-	 *
-	 */
-	protected $streamConstructorClosure;
+class RequestTransformer extends AbstractRequestTransformer implements RequestTransformerInterface {
 
 	/**
 	 * @param UriTransformerInterface $uriTransformer
@@ -50,19 +28,7 @@ class RequestTransformer implements RequestTransformerInterface {
 	 * @return Psr\RequestInterface
 	 */
 	public function transformFlowToPsrRequest(FlowHttp\Request $flowRequest) {
-		$psrRequest = $this->createPsrRequestInstance();
-
-		$psrUri = $this->uriTransformer->transformFlowToPsrUri($flowRequest->getUri());
-		$psrRequest = $psrRequest->withUri($psrUri);
-		$psrRequest = $psrRequest->withMethod($flowRequest->getMethod());
-		$psrRequest = $psrRequest->withProtocolVersion(substr($flowRequest->getVersion(), strrpos($flowRequest->getVersion(), '/') + 1));
-		$psrRequest = $psrRequest->withBody($this->createPsrStreamFromFlowRequest($flowRequest));
-
-		foreach ($flowRequest->getHeaders()->getAll() as $headerName => $headerValues) {
-			$psrRequest = $psrRequest->withHeader($headerName, $headerValues);
-		}
-
-		return $psrRequest;
+		return $this->createPsrFromFlowRequest($flowRequest);
 	}
 
 	/**
@@ -72,51 +38,6 @@ class RequestTransformer implements RequestTransformerInterface {
 	 * @return FlowHttp\Request
 	 */
 	public function transformPsrToFlowRequest(Psr\RequestInterface $psrRequest) {
-		$flowUri = $this->uriTransformer->transformPsrToFlowUri($psrRequest->getUri());
-		$method = $psrRequest->getMethod();
-		$body = $psrRequest->getBody();
-
-		$flowRequest = FlowHttp\Request::create($flowUri, $method);
-		$flowRequest->setContent($body->getContents());
-		$flowRequest->setVersion('HTTP/' . $psrRequest->getProtocolVersion());
-		foreach ($psrRequest->getHeaders() as $headerName => $values) {
-			$flowRequest->setHeader($headerName, $values);
-		}
-
-		return $flowRequest;
-	}
-
-	/**
-	 * Extracts a \Psr\Http\Message\StreamInterface instance from the body of a Flow request. As instanciation of the Stream can depend
-	 * on the implementation you have to hand in a closure that can create the stream instance from a given PHP resource.
-	 *
-	 * @param FlowHttp\Request $request The Flow HTTP request to extract the content from
-	 * @return Psr\StreamInterface
-	 */
-	public function createPsrStreamFromFlowRequest(FlowHttp\Request $request) {
-		try {
-			$resource = $request->getContent(TRUE);
-		} catch (FlowHttp\Exception $exception) {
-			$resource = fopen('php://temp', 'rw');
-			fwrite($resource, $request->getContent());
-		}
-
-		$streamInstance = $this->createStreamFromResource($resource);
-		return $streamInstance;
-	}
-
-	/**
-	 * @param resource $resource
-	 * @return Psr\StreamInterface
-	 */
-	protected function createStreamFromResource($resource) {
-		return $this->streamConstructorClosure->__invoke($resource);
-	}
-
-	/**
-	 * @return Psr\RequestInterface
-	 */
-	protected function createPsrRequestInstance() {
-		return new $this->psrRequestImplementationClassName;
+		return $this->createFlowFromPsrRequest($psrRequest);
 	}
 }

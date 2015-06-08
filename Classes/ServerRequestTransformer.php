@@ -9,7 +9,7 @@ use TYPO3\Flow\Utility\Arrays;
  * Transformer to convert \TYPO3\Flow\Http\Request instances to \Psr\Http\Message\ServerRequestInterface implementation instances and vice versa.
  * Additionally can extract a \Psr\Http\Message\StreamInterface instance from the Flow Request content.
  */
-class ServerRequestTransformer extends RequestTransformer implements ServerRequestTransformerInterface {
+class ServerRequestTransformer extends AbstractRequestTransformer implements ServerRequestTransformerInterface {
 
 	/**
 	 * The UriTransformer instance to use
@@ -53,7 +53,7 @@ class ServerRequestTransformer extends RequestTransformer implements ServerReque
 	 */
 	public function transformFlowToPsrRequest(FlowHttp\Request $flowRequest) {
 		/** @var Psr\ServerRequestInterface $psrRequest */
-		$psrRequest = parent::transformFlowToPsrRequest($flowRequest);
+		$psrRequest = $this->createPsrFromFlowRequest($flowRequest);
 
 		$explodedArguments = $this->explodeFlowRequestArguments($flowRequest);
 
